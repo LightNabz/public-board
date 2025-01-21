@@ -85,6 +85,10 @@ export default function Admin({ posts: initialPosts }) {
     );
   }
 
+  useEffect(() => {
+    refreshPosts();
+  }, []);
+
   return (
     <div className="container mx-auto p-4" style={{ marginTop: '80px' }}>
       <Head>

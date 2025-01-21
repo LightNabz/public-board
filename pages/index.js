@@ -24,6 +24,10 @@ export default function Home({ posts: initialPosts }) {
     setIsMenuOpen(!isMenuOpen);
   }
 
+  useEffect(() => {
+    refreshPosts();
+  }, []);
+
   return (
     <div className="container mx-auto p-4" style={{ marginTop: '80px' }}>
       <Head>
