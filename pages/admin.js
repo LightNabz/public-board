@@ -36,9 +36,16 @@ export default function Admin({ posts: initialPosts }) {
 
   // Handle post deletion
   async function handleDelete(postId) {
-    await supabase.from('posts').delete().eq('id', postId);
-    refreshPosts(); // Refresh the list of posts after deletion
+  if (window.confirm("Are you sure you want to delete this post?")) {
+    const { error } = await supabase.from('posts').delete().eq('id', postId);
+    if (!error) {
+      setPosts((prevPosts) => prevPosts.filter((post) => post.id !== postId));
+    } else {
+      console.error("Failed to delete post:", error);
+    }
   }
+}
+
 
   if (!isAuthenticated) {
     return (
