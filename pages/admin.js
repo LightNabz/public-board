@@ -289,29 +289,21 @@ function NewPostModal({ closeModal, refreshPosts }) {
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
       <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">Comments</h2>
-
-        {/* Scrollable Comments Section */}
-        <div className="space-y-4 max-h-64 overflow-y-auto border-b border-gray-200 pb-4">
-          {comments.length > 0 ? (
-            comments.map((comment) => (
-              <div key={comment.id} className="p-4 border-b border-gray-200">
-                <p className="text-gray-600">{comment.content}</p>
-                <p className="text-sm text-gray-500">by: {comment.username || 'Anonymous'}</p>
-              </div>
-            ))
-          ) : (
-            <p className="text-gray-500">No comments yet.</p>
-          )}
-        </div>
-
-        {/* Add Comment Form */}
-        <form onSubmit={handleCommentSubmit} className="mt-4">
+        <h2 className="text-2xl font-semibold text-gray-800 mb-4">Create a New Post</h2>
+        <form onSubmit={handleSubmit}>
+          <input
+            className="block w-full p-3 border border-gray-300 rounded-md mb-4"
+            placeholder="Title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            required
+          />
           <textarea
             className="block w-full p-3 border border-gray-300 rounded-md mb-4"
-            placeholder="Add a comment..."
-            value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
+            placeholder="Content"
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            required
           ></textarea>
           <input
             className="block w-full p-3 border border-gray-300 rounded-md mb-4"
@@ -321,10 +313,10 @@ function NewPostModal({ closeModal, refreshPosts }) {
           />
           <div className="flex justify-end">
             <button
-              onClick={onClose}
+              onClick={closeModal}
               className="mr-4 text-gray-600 hover:text-gray-800"
             >
-              Close
+              Cancel
             </button>
             <button
               type="submit"
