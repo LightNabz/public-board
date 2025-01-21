@@ -133,7 +133,7 @@ function PostCard({ post, refreshPosts, handleDelete }) {
     <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
       <h2 className="text-2xl font-semibold text-gray-800">{post.title}</h2>
       <p className="text-gray-600 mt-2">{post.content}</p>
-      <p className="text-sm text-gray-500 mt-4">— {post.username || 'Anonymous'}</p>
+      <p className="text-sm text-gray-500 mt-4">by: {post.username || 'Admin'}</p>
 
       <div className="flex items-center justify-between mt-4">
         <button
@@ -165,63 +165,6 @@ function PostCard({ post, refreshPosts, handleDelete }) {
   );
 }
 
-function NewPostModal({ closeModal, refreshPosts }) {
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [username, setUsername] = useState('');
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    await supabase.from('posts').insert([{ title, content, username }]);
-    refreshPosts();
-    closeModal();
-  }
-
-  return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-      <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
-        <h2 className="text-2xl font-semibold text-gray-800 mb-4">Create a New Post</h2>
-        <form onSubmit={handleSubmit}>
-          <input
-            className="block w-full p-3 border border-gray-300 rounded-md mb-4"
-            placeholder="Title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            required
-          />
-          <textarea
-            className="block w-full p-3 border border-gray-300 rounded-md mb-4"
-            placeholder="Content"
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            required
-          ></textarea>
-          <input
-            className="block w-full p-3 border border-gray-300 rounded-md mb-4"
-            placeholder="Username (optional)"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-          />
-          <div className="flex justify-end">
-            <button
-              onClick={closeModal}
-              className="mr-4 text-gray-600 hover:text-gray-800"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="bg-indigo-600 text-white py-2 px-6 rounded-md hover:bg-indigo-700 transition"
-            >
-              Submit
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-}
-
 function CommentModal({ postId, onClose }) {
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
@@ -242,25 +185,45 @@ function CommentModal({ postId, onClose }) {
     onClose();
   }
 
+  async function handleDeleteComment(commentId) {
+    await supabase.from('comments').delete().eq('id', commentId);
+    setComments(comments.filter((comment) => comment.id !== commentId)); // Remove comment from state
+  }
+
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
       <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
-        <h2 className="text-2xl font-semibold text-gray-800 mb-4">Comments</h2>
-        <div className="space-y-4 mb-4">
-          {comments.map((comment) => (
-            <div key={comment.id} className="border-b pb-2">
-              <p className="text-gray-800">{comment.content}</p>
-              <p className="text-sm text-gray-500">— {comment.username || 'Anonymous'}</p>
-            </div>
-          ))}
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">Comments</h2>
+
+        {/* Scrollable Comments Section */}
+        <div className="space-y-4 max-h-64 overflow-y-auto border-b border-gray-200 pb-4">
+          {comments.length > 0 ? (
+            comments.map((comment) => (
+              <div key={comment.id} className="p-4 border-b border-gray-200">
+                <p className="text-gray-600">{comment.content}</p>
+                <p className="text-sm text-gray-500">— {comment.username || 'Anonymous'}</p>
+
+                {/* Delete button for each comment */}
+                <button
+                  onClick={() => handleDeleteComment(comment.id)}
+                  className="text-red-600 hover:text-red-800 text-sm mt-2"
+                >
+                  🗑️ Delete
+                </button>
+              </div>
+            ))
+          ) : (
+            <p className="text-gray-500">No comments yet.</p>
+          )}
         </div>
-        <form onSubmit={handleCommentSubmit}>
+
+        {/* Add Comment Form */}
+        <form onSubmit={handleCommentSubmit} className="mt-4">
           <textarea
             className="block w-full p-3 border border-gray-300 rounded-md mb-4"
-            placeholder="Add a comment"
+            placeholder="Add a comment..."
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
-            required
           ></textarea>
           <input
             className="block w-full p-3 border border-gray-300 rounded-md mb-4"
@@ -279,7 +242,7 @@ function CommentModal({ postId, onClose }) {
               type="submit"
               className="bg-indigo-600 text-white py-2 px-6 rounded-md hover:bg-indigo-700 transition"
             >
-              Comment
+              Submit
             </button>
           </div>
         </form>

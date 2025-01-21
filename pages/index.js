@@ -124,7 +124,7 @@ function PostCard({ post, refreshPosts }) {
 
       {/* Comment Modal */}
       {isCommentModalOpen && (
-        <CommentModal postId={post.id} onClose={() => setIsCommentModalOpen(false)} />
+        <CommentsModal postId={post.id} onClose={() => setIsCommentModalOpen(false)} />
       )}
     </div>
   );
@@ -187,42 +187,86 @@ function NewPostModal({ closeModal, refreshPosts }) {
   );
 }
 
-function CommentModal({ postId, onClose }) {
-  const [comments, setComments] = useState([]);
+function CommentsModal({ postId, onClose }) {
   const [newComment, setNewComment] = useState('');
-  const [username, setUsername] = useState('');
+  const [username, setUsername] = useState('Anonymous'); // Default username
+  const [comments, setComments] = useState([]);
 
   useEffect(() => {
-    async function fetchComments() {
+    // Fetch initial comments
+    const fetchComments = async () => {
       const { data } = await supabase
         .from('comments')
         .select('*')
-        .eq('post_id', postId);
-      setComments(data);
-    }
+        .eq('post_id', postId)
+        .order('created_at', { ascending: true });
+      setComments(data || []);
+    };
 
     fetchComments();
+
+    // Realtime updates
+    const subscription = supabase
+      .channel('realtime:comments')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'comments' },
+        (payload) => {
+          if (payload.new.post_id === postId) {
+            // If comment is new, add it to the state
+            setComments((prevComments) => {
+              // Prevent duplicates by ensuring the new comment isn't already in the list
+              if (!prevComments.some(comment => comment.id === payload.new.id)) {
+                return [...prevComments, payload.new];
+              }
+              return prevComments;
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(subscription);
+    };
   }, [postId]);
 
-  async function handleCommentSubmit(e) {
+  const handleCommentSubmit = async (e) => {
     e.preventDefault();
     if (newComment.trim()) {
-      await supabase.from('comments').insert([{ post_id: postId, content: newComment, username }]);
+      // Immediately update the comment list with the new comment
+      const newCommentObj = {
+        post_id: postId,
+        content: newComment,
+        username: username.trim() || 'Anonymous',
+        created_at: new Date().toISOString(), // Optionally add timestamp
+      };
+
+      // Optimistically update the UI
+      setComments((prevComments) => [newCommentObj, ...prevComments]);
+
+      // Insert the new comment into Supabase
+      await supabase
+        .from('comments')
+        .insert([newCommentObj]);
+
+      // Clear the comment input
       setNewComment('');
-      onClose();
     }
-  }
+  };
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
       <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
         <h2 className="text-xl font-semibold text-gray-800 mb-4">Comments</h2>
-        <div className="space-y-4">
+
+        {/* Scrollable Comments Section */}
+        <div className="space-y-4 max-h-64 overflow-y-auto border-b border-gray-200 pb-4">
           {comments.length > 0 ? (
             comments.map((comment) => (
               <div key={comment.id} className="p-4 border-b border-gray-200">
                 <p className="text-gray-600">{comment.content}</p>
-                <p className="text-sm text-gray-500">— {comment.username || 'Anonymous'}</p>
+                <p className="text-sm text-gray-500">by: {comment.username || 'Anonymous'}</p>
               </div>
             ))
           ) : (
@@ -230,6 +274,7 @@ function CommentModal({ postId, onClose }) {
           )}
         </div>
 
+        {/* Add Comment Form */}
         <form onSubmit={handleCommentSubmit} className="mt-4">
           <textarea
             className="block w-full p-3 border border-gray-300 rounded-md mb-4"
