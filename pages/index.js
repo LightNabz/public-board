@@ -1,270 +1,221 @@
-import { useState } from "react";
-import { createClient } from "@supabase/supabase-js";
+import { useState, useEffect } from 'react';
+import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-);
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
 export async function getStaticProps() {
-  const { data: posts } = await supabase
-    .from("posts")
-    .select("*")
-    .order("created_at", { ascending: false });
-
+  const { data: posts } = await supabase.from('posts').select('*').order('created_at', { ascending: false });
   return { props: { posts } };
 }
 
-export default function Home({ posts }) {
-  const [likes, setLikes] = useState(
-    posts.map((post) => ({ id: post.id, count: post.likes || 0 }))
-  );
+export default function Home({ posts: initialPosts }) {
+  const [posts, setPosts] = useState(initialPosts);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [formData, setFormData] = useState({ username: "", recipient: "", title: "", content: "" });
-  const [comments, setComments] = useState([]);
-  const [currentPostId, setCurrentPostId] = useState(null);
-  const [isCommentsModalOpen, setIsCommentsModalOpen] = useState(false);
-  const [newComment, setNewComment] = useState("");
 
-  const handleLike = async (id) => {
-    const updatedLikes = likes.map((like) =>
-      like.id === id ? { ...like, count: like.count + 1 } : like
-    );
-    setLikes(updatedLikes);
-
-    await supabase
-      .from("posts")
-      .update({ likes: updatedLikes.find((like) => like.id === id).count })
-      .eq("id", id);
-  };
-
-  const handleFormSubmit = async (e) => {
-    e.preventDefault();
-    await supabase.from("posts").insert([formData]);
-    setIsModalOpen(false);
-    window.location.reload(); // Refresh to show the new post
-  };
-
-  const openCommentsModal = async (postId) => {
-    setCurrentPostId(postId);
-    const { data: postComments } = await supabase
-      .from("comments")
-      .select("*")
-      .eq("post_id", postId);
-    setComments(postComments || []);
-    setIsCommentsModalOpen(true);
-  };
-
-  const handleAddComment = async () => {
-    if (newComment.trim()) {
-      const username = formData.username.trim() || "Anonymous"; // Default to "Anonymous" if empty
-      const newCommentData = { 
-        post_id: currentPostId, 
-        content: newComment.trim(), 
-        username 
-      };
-  
-      await supabase.from("comments").insert([newCommentData]);
-  
-      const updatedComments = [...comments, newCommentData];
-      setComments(updatedComments);
-      setNewComment("");
-      setFormData({ ...formData, username: "" }); // Reset username field after submission
-    }
-  };  
+  // Refresh posts (in case of likes/comments updates)
+  async function refreshPosts() {
+    const { data } = await supabase.from('posts').select('*').order('created_at', { ascending: false });
+    setPosts(data);
+  }
 
   return (
-    <div className="min-h-screen bg-gray-100 py-8">
-      <div className="max-w-4xl mx-auto p-4 bg-white shadow rounded">
-        <header className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800">Keluh Kesah</h1>
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-          >
-            Tambah Keluhan
-          </button>
-        </header>
+    <div className="container mx-auto p-4">
+      <header className="text-center mb-8">
+        <h1 className="text-3xl font-bold text-gray-800">Welcome to WhisperSpace</h1>
+      </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {posts.map((post) => (
-            <div
-              key={post.id}
-              className="bg-yellow-200 p-4 rounded shadow hover:shadow-lg transition"
-              style={{ transform: "rotate(-1deg)" }}
-            >
-              <div className="mb-2">
-                <span className="text-sm text-gray-700">
-                  Dari: {post.username || "Anonim"}
-                </span>
-              </div>
-              <div className="mb-2">
-                <span className="text-sm text-gray-700">
-                  Untuk: {post.recipient || "Semua"}
-                </span>
-              </div>
-              <h2 className="text-lg font-medium text-gray-800 mb-2">
-                {post.title}
-              </h2>
-              <p className="text-gray-700">{post.content}</p>
-              <div className="flex items-center justify-between mt-4">
-                <button
-                  onClick={() => handleLike(post.id)}
-                  className="flex items-center text-gray-500 hover:text-gray-700"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5 mr-1"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
-                    <path d="M3.172 10H7V2a1 1 0 012 0v8h4.828a2 2 0 011.414 3.414l-5.243 5.242a1 1 0 01-1.414 0l-5.242-5.242A2 2 0 013.172 10z" />
-                  </svg>
-                  {likes.find((like) => like.id === post.id)?.count || 0}
-                </button>
-                <button
-                  onClick={() => openCommentsModal(post.id)}
-                  className="text-blue-500 hover:underline"
-                >
-                  Comments
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+      <div className="flex justify-center mb-6">
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="bg-indigo-600 text-white px-6 py-3 rounded-full hover:bg-indigo-700 transition"
+        >
+          + New Post
+        </button>
       </div>
 
-      {/* Modal for Adding Posts */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">
-          <div className="bg-white p-6 rounded shadow-md w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">Tambah Keluhan</h2>
-            <form onSubmit={handleFormSubmit}>
-              <label className="block mb-2">
-                Dari (opsional):
-                <input
-                  type="text"
-                  className="w-full border rounded p-2"
-                  value={formData.username}
-                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                />
-              </label>
-              <label className="block mb-2">
-                Untuk:
-                <input
-                  type="text"
-                  className="w-full border rounded p-2"
-                  value={formData.recipient}
-                  onChange={(e) => setFormData({ ...formData, recipient: e.target.value })}
-                />
-              </label>
-              <label className="block mb-2">
-                Judul:
-                <input
-                  type="text"
-                  className="w-full border rounded p-2"
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  required
-                />
-              </label>
-              <label className="block mb-4">
-                Isi Keluhan:
-                <textarea
-                  className="w-full border rounded p-2"
-                  rows="4"
-                  value={formData.content}
-                  onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                  required
-                ></textarea>
-              </label>
-              <div className="flex justify-between">
-                <button
-                  type="button"
-                  className="bg-gray-300 text-gray-700 px-4 py-2 rounded"
-                  onClick={() => setIsModalOpen(false)}
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                >
-                  Tambahkan
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Modal for Comments */}
-      {isCommentsModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">
-            <div className="bg-white p-6 rounded shadow-md w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">Comments</h2>
-            <div className="mb-4 max-h-64 overflow-y-auto">
-                {comments.length > 0 ? (
-                comments.map((comment, index) => (
-                    <div
-                    key={index}
-                    className="border-b border-gray-200 py-2 text-gray-700"
-                    >
-                    <span className="text-sm text-gray-600">
-                        From: {comment.username || "Anonymous"}
-                    </span>
-                    <p>{comment.content}</p>
-                    </div>
-                ))
-                ) : (
-                <p className="text-gray-500">No comments yet.</p>
-                )}
-            </div>
-
-            {/* Input for Comment Username */}
-            <label className="block mb-2">
-                Your Name (optional):
-                <input
-                type="text"
-                className="w-full border rounded p-2"
-                value={formData.username}
-                onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                placeholder="Enter your name or leave blank for Anonymous"
-                />
-            </label>
-
-            {/* Input for New Comment */}
-            <label className="block mb-2">
-                Add a Comment:
-                <textarea
-                className="w-full border rounded p-2"
-                rows="3"
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                placeholder="Write your comment..."
-                ></textarea>
-            </label>
-
-            <div className="flex justify-between">
-                <button
-                type="button"
-                className="bg-gray-300 text-gray-700 px-4 py-2 rounded"
-                onClick={() => setIsCommentsModalOpen(false)}
-                >
-                Close
-                </button>
-                <button
-                type="button"
-                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                onClick={handleAddComment}
-                >
-                Add Comment
-                </button>
-            </div>
-            </div>
-        </div>
+      <ul className="space-y-6">
+        {posts.length > 0 ? (
+          posts.map((post) => <PostCard key={post.id} post={post} refreshPosts={refreshPosts} />)
+        ) : (
+          <p className="text-gray-500 text-center">No posts yet. Be the first to share your thoughts!</p>
         )}
+      </ul>
 
+      {/* New Post Modal */}
+      {isModalOpen && <NewPostModal closeModal={() => setIsModalOpen(false)} refreshPosts={refreshPosts} />}
     </div>
   );
 }
+
+function PostCard({ post, refreshPosts }) {
+  const [likes, setLikes] = useState(post.likes || 0);
+  const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
+
+  async function handleLike() {
+    const { data, error } = await supabase.from('posts').update({ likes: likes + 1 }).eq('id', post.id);
+    if (!error) {
+      setLikes(likes + 1);
+      refreshPosts();
+    }
+  }
+
+  return (
+    <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+      <h2 className="text-2xl font-semibold text-gray-800">{post.title}</h2>
+      <p className="text-gray-600 mt-2">{post.content}</p>
+      <p className="text-sm text-gray-500 mt-4">— {post.username || 'Anonymous'}</p>
+
+      <div className="flex items-center justify-between mt-4">
+        <button
+          onClick={handleLike}
+          className="text-indigo-600 hover:text-indigo-800 transition"
+        >
+          👍 {likes} Likes
+        </button>
+        <button
+          onClick={() => setIsCommentModalOpen(true)}
+          className="text-gray-600 hover:text-gray-800 transition"
+        >
+          💬 Comments
+        </button>
+      </div>
+
+      {/* Comment Modal */}
+      {isCommentModalOpen && (
+        <CommentModal postId={post.id} onClose={() => setIsCommentModalOpen(false)} />
+      )}
+    </div>
+  );
+}
+
+function NewPostModal({ closeModal, refreshPosts }) {
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
+  const [username, setUsername] = useState('');
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    await supabase.from('posts').insert([{ title, content, username }]);
+    refreshPosts();
+    closeModal();
+  }
+
+  return (
+    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+      <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+        <h2 className="text-2xl font-semibold text-gray-800 mb-4">Create a New Post</h2>
+        <form onSubmit={handleSubmit}>
+          <input
+            className="block w-full p-3 border border-gray-300 rounded-md mb-4"
+            placeholder="Title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            required
+          />
+          <textarea
+            className="block w-full p-3 border border-gray-300 rounded-md mb-4"
+            placeholder="Content"
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            required
+          ></textarea>
+          <input
+            className="block w-full p-3 border border-gray-300 rounded-md mb-4"
+            placeholder="Username (optional)"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+          />
+          <div className="flex justify-end">
+            <button
+              onClick={closeModal}
+              className="mr-4 text-gray-600 hover:text-gray-800"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="bg-indigo-600 text-white py-2 px-6 rounded-md hover:bg-indigo-700 transition"
+            >
+              Submit
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function CommentModal({ postId, onClose }) {
+  const [comments, setComments] = useState([]);
+  const [newComment, setNewComment] = useState('');
+  const [username, setUsername] = useState('');
+
+  useEffect(() => {
+    async function fetchComments() {
+      const { data } = await supabase
+        .from('comments')
+        .select('*')
+        .eq('post_id', postId)
+        .order('created_at', { ascending: true });
+      setComments(data || []);
+    }
+    fetchComments();
+  }, [postId]);
+
+  async function handleAddComment(e) {
+    e.preventDefault();
+    await supabase.from('comments').insert([
+      { post_id: postId, content: newComment, username: username || 'Anonymous' },
+    ]);
+    setComments((prev) => [...prev, { username: username || 'Anonymous', content: newComment }]);
+    setNewComment('');
+    setUsername('');
+  }
+
+  return (
+    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+      <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+        <h2 className="text-2xl font-semibold text-gray-800 mb-4">Comments</h2>
+        <div className="space-y-4 max-h-80 overflow-y-auto">
+          {comments.map((comment, idx) => (
+            <div key={idx} className="p-2 border-b border-gray-200">
+              <p className="text-sm text-gray-600">
+                <strong>{comment.username || 'Anonymous'}:</strong> {comment.content}
+              </p>
+            </div>
+          ))}
+        </div>
+        <form onSubmit={handleAddComment} className="mt-4">
+          <textarea
+            className="block w-full p-3 border border-gray-300 rounded-md mb-4"
+            placeholder="Write a comment..."
+            value={newComment}
+            onChange={(e) => setNewComment(e.target.value)}
+            required
+          ></textarea>
+          <input
+            className="block w-full p-3 border border-gray-300 rounded-md mb-4"
+            placeholder="Comment as (optional)"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+          />
+          <div className="flex justify-end">
+            <button
+              onClick={onClose}
+              className="mr-4 text-gray-600 hover:text-gray-800"
+            >
+              Close
+            </button>
+            <button
+              type="submit"
+              className="bg-indigo-600 text-white py-2 px-6 rounded-md hover:bg-indigo-700 transition"
+            >
+              Add Comment
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
