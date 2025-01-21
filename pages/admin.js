@@ -289,42 +289,51 @@ function NewPostModal({ closeModal, refreshPosts }) {
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
       <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">Create New Post</h2>
-        <form onSubmit={handleNewPostSubmit}>
-          <input
-            className="w-full p-3 border border-gray-300 rounded-md mb-4"
-            placeholder="Post title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            required
-          />
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">Comments</h2>
+
+        {/* Scrollable Comments Section */}
+        <div className="space-y-4 max-h-64 overflow-y-auto border-b border-gray-200 pb-4">
+          {comments.length > 0 ? (
+            comments.map((comment) => (
+              <div key={comment.id} className="p-4 border-b border-gray-200">
+                <p className="text-gray-600">{comment.content}</p>
+                <p className="text-sm text-gray-500">by: {comment.username || 'Anonymous'}</p>
+              </div>
+            ))
+          ) : (
+            <p className="text-gray-500">No comments yet.</p>
+          )}
+        </div>
+
+        {/* Add Comment Form */}
+        <form onSubmit={handleCommentSubmit} className="mt-4">
           <textarea
-            className="w-full p-3 border border-gray-300 rounded-md mb-4"
-            placeholder="Post content"
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            required
-          />
+            className="block w-full p-3 border border-gray-300 rounded-md mb-4"
+            placeholder="Add a comment..."
+            value={newComment}
+            onChange={(e) => setNewComment(e.target.value)}
+          ></textarea>
           <input
-            className="w-full p-3 border border-gray-300 rounded-md mb-4"
-            placeholder="Your username"
+            className="block w-full p-3 border border-gray-300 rounded-md mb-4"
+            placeholder="Username (optional)"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            required
           />
-          <button
-            type="submit"
-            className="bg-indigo-600 text-white py-2 rounded-md hover:bg-indigo-700 transition w-full"
-          >
-            Submit Post
-          </button>
+          <div className="flex justify-end">
+            <button
+              onClick={onClose}
+              className="mr-4 text-gray-600 hover:text-gray-800"
+            >
+              Close
+            </button>
+            <button
+              type="submit"
+              className="bg-indigo-600 text-white py-2 px-6 rounded-md hover:bg-indigo-700 transition"
+            >
+              Submit
+            </button>
+          </div>
         </form>
-        <button
-          onClick={closeModal}
-          className="absolute top-2 right-2 text-gray-600 hover:text-gray-800"
-        >
-          ✖️ Close
-        </button>
       </div>
     </div>
   );
