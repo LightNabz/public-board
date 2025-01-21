@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import Head from 'next/head';
+import Head from 'next/head'; // Import Head for meta tags
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
@@ -12,7 +12,7 @@ export async function getStaticProps() {
 export default function Home({ posts: initialPosts }) {
   const [posts, setPosts] = useState(initialPosts);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false); // State for the hamburger menu
+  const [isMenuOpen, setIsMenuOpen] = useState(false); 
 
   // Refresh posts (in case of likes/comments updates)
   async function refreshPosts() {
@@ -20,7 +20,6 @@ export default function Home({ posts: initialPosts }) {
     setPosts(data);
   }
 
-  // Function to toggle the menu
   function toggleMenu() {
     setIsMenuOpen(!isMenuOpen);
   }
@@ -28,7 +27,7 @@ export default function Home({ posts: initialPosts }) {
   return (
     <div className="container mx-auto p-4" style={{ marginTop: '80px' }}>
       <Head>
-        <meta charSet="UTF-8" />
+        <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Nabz githap</title>
         <script src="https://cdn.jsdelivr.net/npm/heroicons@2.0.16/24/outline.js"></script>
@@ -37,18 +36,13 @@ export default function Home({ posts: initialPosts }) {
 
       <nav>
         <div className="logo">Public Board</div>
-        <div className="hamburger" onClick={toggleMenu}>
-          <div className="line"></div>
-          <div className="line"></div>
-          <div className="line"></div>
+        <div className={`hamburger ${isMenuOpen ? 'active' : ''}`} onClick={toggleMenu}>
+          <div></div>
+          <div></div>
+          <div></div>
         </div>
         <header>
-          <ul
-            id="nav-links"
-            className={`transition-all duration-300 ${
-              isMenuOpen ? 'block' : 'hidden'
-            }`}
-          >
+          <ul className={isMenuOpen ? 'active' : ''} id="nav-links">
             <li><a href="https://lightnabz.vercel.app">Beranda</a></li>
             <li><a href="https://lightnabz.vercel.app/#about">Tentang</a></li>
             <li><a href="https://lightnabz.vercel.app/#projects">Hasil nganggur</a></li>

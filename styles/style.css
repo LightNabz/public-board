@@ -1,7 +1,7 @@
 :root {
     --nav-menu-padding: 10px;
     --nav-menu-item-spacing: 1rem;
-    --nav-menu-height: 200px;
+    --nav-menu-height: 300px;
     --nav-menu-width: 120px;
 }
 
@@ -323,6 +323,7 @@ footer a {
         padding: var(--nav-menu-padding);
         overflow: hidden;
         gap: var(--nav-menu-item-spacing);
+        transition: opacity 0.3s ease-in-out;
     }
 
     nav ul.active {
