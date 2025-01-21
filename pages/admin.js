@@ -163,6 +163,7 @@ export default function Admin({ posts: initialPosts }) {
 
 function PostCard({ post, refreshPosts, handleDelete }) {
   const [likes, setLikes] = useState(post.likes || 0);
+  const [commentCount, setCommentCount] = useState(0); // New state for comment count
   const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
 
   async function handleLike() {
@@ -172,6 +173,37 @@ function PostCard({ post, refreshPosts, handleDelete }) {
       refreshPosts();
     }
   }
+
+  async function fetchCommentCount() {
+    const { count, error } = await supabase
+      .from('comments')
+      .select('id', { count: 'exact' })
+      .eq('post_id', post.id);
+
+    if (!error) {
+      setCommentCount(count);
+    }
+  }
+
+  useEffect(() => {
+    fetchCommentCount(); // Fetch initial comment count
+    const subscription = supabase
+      .channel('realtime:comments')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'comments' },
+        (payload) => {
+          if (payload.new.post_id === post.id) {
+            fetchCommentCount(); // Update comment count on real-time changes
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(subscription);
+    };
+  }, [post.id]);
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
@@ -184,13 +216,13 @@ function PostCard({ post, refreshPosts, handleDelete }) {
           onClick={handleLike}
           className="text-indigo-600 hover:text-indigo-800 transition"
         >
-          👍 {likes} Likes
+          ❤️ {likes} Likes
         </button>
         <button
           onClick={() => setIsCommentModalOpen(true)}
           className="text-gray-600 hover:text-gray-800 transition"
         >
-          💬 Comments
+          💬 {commentCount} Comments
         </button>
         {/* Delete button */}
         <button
@@ -216,22 +248,74 @@ function CommentModal({ postId, onClose }) {
 
   useEffect(() => {
     async function fetchComments() {
-      const { data } = await supabase.from('comments').select('*').eq('post_id', postId);
+      const { data } = await supabase.from('comments').select('*').eq('post_id', postId).order('created_at', { ascending: true });
       setComments(data);
     }
+
     fetchComments();
+
+    // Realtime updates for comments
+    const subscription = supabase
+      .channel('realtime:comments')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'comments' },
+        (payload) => {
+          if (payload.new.post_id === postId) {
+            // If the comment is for the current post, update state
+            setComments((prevComments) => {
+              if (payload.eventType === 'INSERT' && !prevComments.some(comment => comment.id === payload.new.id)) {
+                return [...prevComments, payload.new];
+              }
+              if (payload.eventType === 'DELETE') {
+                return prevComments.filter(comment => comment.id !== payload.old.id);
+              }
+              return prevComments;
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(subscription);
+    };
   }, [postId]);
 
   async function handleCommentSubmit(e) {
     e.preventDefault();
-    await supabase.from('comments').insert([{ post_id: postId, content: newComment, username }]);
-    setNewComment('');
-    onClose();
+    if (newComment.trim()) {
+      const newCommentObj = {
+        post_id: postId,
+        content: newComment,
+        username: username || 'Anonymous',
+        created_at: new Date().toISOString(), // Optionally add a timestamp
+      };
+
+      // Optimistically update the UI
+      setComments((prevComments) => [newCommentObj, ...prevComments]);
+
+      try {
+        // Insert the new comment into Supabase
+        const { data, error } = await supabase.from('comments').insert([newCommentObj]).single();
+        if (error) throw error;
+      } catch (error) {
+        console.error('Failed to submit comment:', error);
+        // Handle error if needed (maybe revert the optimistic update)
+      } finally {
+        // Clear the input field after submission
+        setNewComment('');
+      }
+    }
   }
 
   async function handleDeleteComment(commentId) {
-    await supabase.from('comments').delete().eq('id', commentId);
-    setComments(comments.filter((comment) => comment.id !== commentId)); // Remove comment from state
+    try {
+      await supabase.from('comments').delete().eq('id', commentId);
+      setComments(comments.filter((comment) => comment.id !== commentId)); // Remove comment from state
+    } catch (error) {
+      console.error('Failed to delete comment:', error);
+    }
   }
 
   return (
@@ -245,7 +329,7 @@ function CommentModal({ postId, onClose }) {
             comments.map((comment) => (
               <div key={comment.id} className="p-4 border-b border-gray-200">
                 <p className="text-gray-600">{comment.content}</p>
-                <p className="text-sm text-gray-500">— {comment.username || 'Anonymous'}</p>
+                <p className="text-sm text-gray-500">by: {comment.username || 'Anonymous'}</p>
 
                 {/* Delete button for each comment */}
                 <button
@@ -287,7 +371,7 @@ function CommentModal({ postId, onClose }) {
               className="bg-indigo-600 text-white py-2 px-6 rounded-md hover:bg-indigo-700 transition"
             >
               Submit
-              </button>
+            </button>
           </div>
         </form>
       </div>

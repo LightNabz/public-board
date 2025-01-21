@@ -100,7 +100,19 @@ export default function Home({ posts: initialPosts }) {
 
 function PostCard({ post, refreshPosts }) {
   const [likes, setLikes] = useState(post.likes || 0);
+  const [commentCount, setCommentCount] = useState(0); // Track the comment count
   const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
+
+  useEffect(() => {
+    async function fetchCommentCount() {
+      const { count } = await supabase
+        .from('comments')
+        .select('id', { count: 'exact' })
+        .eq('post_id', post.id);
+      setCommentCount(count); // Set the number of comments
+    }
+    fetchCommentCount();
+  }, [post.id]);
 
   async function handleLike() {
     const { data, error } = await supabase.from('posts').update({ likes: likes + 1 }).eq('id', post.id);
@@ -114,20 +126,20 @@ function PostCard({ post, refreshPosts }) {
     <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
       <h2 className="text-2xl font-semibold text-gray-800">{post.title}</h2>
       <p className="text-gray-600 mt-2">{post.content}</p>
-      <p className="text-sm text-gray-500 mt-4">— {post.username || 'Anonymous'}</p>
+      <p className="text-sm text-gray-500 mt-4">by: {post.username || 'Anonymous'}</p>
 
       <div className="flex items-center justify-between mt-4">
         <button
           onClick={handleLike}
           className="text-indigo-600 hover:text-indigo-800 transition"
         >
-          👍 {likes} Likes
+          ❤️ {likes} Likes
         </button>
         <button
           onClick={() => setIsCommentModalOpen(true)}
           className="text-gray-600 hover:text-gray-800 transition"
         >
-          💬 Comments
+          💬 {commentCount} Comments
         </button>
       </div>
 
@@ -243,24 +255,29 @@ function CommentsModal({ postId, onClose }) {
   const handleCommentSubmit = async (e) => {
     e.preventDefault();
     if (newComment.trim()) {
-      // Immediately update the comment list with the new comment
       const newCommentObj = {
         post_id: postId,
         content: newComment,
         username: username.trim() || 'Anonymous',
-        created_at: new Date().toISOString(), // Optionally add timestamp
+        created_at: new Date().toISOString(),
       };
-
+  
       // Optimistically update the UI
       setComments((prevComments) => [newCommentObj, ...prevComments]);
-
-      // Insert the new comment into Supabase
-      await supabase
-        .from('comments')
-        .insert([newCommentObj]);
-
-      // Clear the comment input
-      setNewComment('');
+  
+      try {
+        // Insert the new comment into Supabase
+        await supabase.from('comments').insert([newCommentObj]);
+      } catch (error) {
+        // Remove the comment from the UI if the insertion fails
+        console.error('Failed to submit comment:', error);
+        setComments((prevComments) =>
+          prevComments.filter((comment) => comment !== newCommentObj)
+        );
+      } finally {
+        // Clear the input field regardless of success or failure
+        setNewComment('');
+      }
     }
   };
 
