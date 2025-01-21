@@ -279,11 +279,11 @@ function NewPostModal({ closeModal, refreshPosts }) {
   const [content, setContent] = useState('');
   const [username, setUsername] = useState('');
 
-  async function handleNewPostSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     await supabase.from('posts').insert([{ title, content, username }]);
-    closeModal();
     refreshPosts();
+    closeModal();
   }
 
   return (
