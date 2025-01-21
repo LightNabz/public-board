@@ -1,17 +1,33 @@
-import { useState } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { useState } from "react";
+import { createClient } from "@supabase/supabase-js";
 
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+// Initialize Supabase
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
 
 export default function NewPost() {
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [username, setUsername] = useState('');
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [username, setUsername] = useState("");
+
+  // Generate a temporary user_id (you could use session or unique random value)
+  const user_id = Math.random().toString(36).substring(2, 15);
 
   async function handleSubmit(e) {
     e.preventDefault();
-    await supabase.from('posts').insert([{ title, content, username }]);
-    alert('Post created!');
+    const { data, error } = await supabase.from("posts").insert([
+      { title, content, username: username || "Anonymous", user_id },
+    ]);
+
+    if (error) {
+      console.error("Error creating post:", error);
+    } else {
+      alert("Post created!");
+      // Refresh the page to reflect the new post
+      location.reload();
+    }
   }
 
   return (
@@ -38,9 +54,10 @@ export default function NewPost() {
           value={username}
           onChange={(e) => setUsername(e.target.value)}
         />
-        <button type="submit" className="bg-blue-500 text-white px-4 py-2">Submit</button>
+        <button type="submit" className="bg-blue-500 text-white px-4 py-2">
+          Submit
+        </button>
       </form>
     </div>
   );
 }
-
