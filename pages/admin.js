@@ -87,13 +87,33 @@ export default function Admin({ posts: initialPosts }) {
         <div className="logo">Admin Panel</div>
         <header>
           <ul id="nav-links">
-            <li><a href="/">Beranda</a></li>
-            <li><a href="#about">Tentang</a></li>
-            <li><a href="#projects">Hasil nganggur</a></li>
-            <li><a href="#contact">Contact</a></li>
+            <li><a href="https://lightnabz.vercel.app">Beranda</a></li>
+            <li><a href="https://lightnabz.vercel.app/#about">Tentang</a></li>
+            <li><a href="https://lightnabz.vercel.app/#projects">Hasil nganggur</a></li>
+            <li><a href="https://lightnabz.vercel.app/#contact">Contact</a></li>
+            <li>
+              <a href="https://github.com/LightNabz" class="flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.11.793-.26.793-.577 0-.285-.01-1.04-.015-2.04-3.338.726-4.042-1.61-4.042-1.61-.546-1.387-1.333-1.757-1.333-1.757-1.089-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.807 1.305 3.495.998.108-.775.419-1.305.762-1.605-2.665-.306-5.466-1.332-5.466-5.93 0-1.31.468-2.38 1.235-3.22-.123-.304-.535-1.524.117-3.176 0 0 1.007-.322 3.301 1.23a11.52 11.52 0 013.004-.404c1.02.004 2.047.137 3.003.403 2.292-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.873.12 3.177.77.84 1.232 1.91 1.232 3.22 0 4.609-2.805 5.619-5.475 5.92.429.37.823 1.103.823 2.222 0 1.605-.014 2.896-.014 3.287 0 .32.19.694.8.576 4.765-1.592 8.2-6.09 8.2-11.386 0-6.627-5.373-12-12-12z" />
+                </svg>
+              </a>
+            </li>
           </ul>
         </header>
       </nav>
+
+      <div className="background">
+        <div className="circle" style={{ top: '90%', left: '10%', animationDuration: '12s' }}></div>
+        <div className="circle" style={{ top: '85%', left: '50%', animationDuration: '15s' }}></div>
+        <div className="circle" style={{ top: '95%', left: '30%', animationDuration: '10s' }}></div>
+        <div className="circle" style={{ top: '80%', left: '70%', animationDuration: '18s' }}></div>
+        <div className="circle" style={{ top: '90%', left: '90%', animationDuration: '16s' }}></div>
+        <div className="circle" style={{ top: '85%', left: '20%', animationDuration: '11s' }}></div>
+        <div className="circle" style={{ top: '75%', left: '40%', animationDuration: '9s' }}></div>
+        <div className="circle" style={{ top: '70%', left: '60%', animationDuration: '13s' }}></div>
+        <div className="circle" style={{ top: '95%', left: '80%', animationDuration: '14s' }}></div>
+        <div className="circle" style={{ top: '88%', left: '15%', animationDuration: '12s' }}></div>
+      </div>
 
       <div className="flex justify-center mb-6">
         <button
