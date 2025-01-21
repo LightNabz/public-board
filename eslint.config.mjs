@@ -17,6 +17,7 @@ const eslintConfig = [
       "@typescript-eslint/no-unused-vars": "off",
       "@next/next/no-sync-scripts": "off",
       "@next/next/no-page-custom-font": "off",
+      "@next/next/no-html-link-for-pages": "off",
     },
   },
 ];
