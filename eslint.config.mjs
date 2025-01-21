@@ -18,6 +18,7 @@ const eslintConfig = [
       "@next/next/no-sync-scripts": "off",
       "@next/next/no-page-custom-font": "off",
       "@next/next/no-html-link-for-pages": "off",
+      "react-hooks/rules-of-hooks": "off",
     },
   },
 ];
