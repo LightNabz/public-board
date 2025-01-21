@@ -246,9 +246,65 @@ function CommentModal({ postId, onClose }) {
               className="bg-indigo-600 text-white py-2 px-6 rounded-md hover:bg-indigo-700 transition"
             >
               Submit
-            </button>
-            </div>
-          </form>
+              </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function NewPostModal({ closeModal, refreshPosts }) {
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
+  const [username, setUsername] = useState('');
+
+  async function handleNewPostSubmit(e) {
+    e.preventDefault();
+    await supabase.from('posts').insert([{ title, content, username }]);
+    closeModal();
+    refreshPosts();
+  }
+
+  return (
+    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+      <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">Create New Post</h2>
+        <form onSubmit={handleNewPostSubmit}>
+          <input
+            className="w-full p-3 border border-gray-300 rounded-md mb-4"
+            placeholder="Post title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            required
+          />
+          <textarea
+            className="w-full p-3 border border-gray-300 rounded-md mb-4"
+            placeholder="Post content"
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            required
+          />
+          <input
+            className="w-full p-3 border border-gray-300 rounded-md mb-4"
+            placeholder="Your username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            required
+          />
+          <button
+            type="submit"
+            className="bg-indigo-600 text-white py-2 rounded-md hover:bg-indigo-700 transition w-full"
+          >
+            Submit Post
+          </button>
+        </form>
+        <button
+          onClick={closeModal}
+          className="absolute top-2 right-2 text-gray-600 hover:text-gray-800"
+        >
+          ✖️ Close
+        </button>
       </div>
     </div>
   );
