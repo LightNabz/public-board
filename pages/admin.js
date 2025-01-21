@@ -39,6 +39,10 @@ export default function Admin({ posts: initialPosts }) {
     setIsMenuOpen(!isMenuOpen);
   }
 
+  useEffect(() => {
+    refreshPosts();
+  }, []);
+
   // Handle post deletion
   async function handleDelete(postId) {
   if (window.confirm("Are you sure you want to delete this post?")) {
@@ -84,10 +88,6 @@ export default function Admin({ posts: initialPosts }) {
       </div>
     );
   }
-
-  useEffect(() => {
-    refreshPosts();
-  }, []);
 
   return (
     <div className="container mx-auto p-4" style={{ marginTop: '80px' }}>
